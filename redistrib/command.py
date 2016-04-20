@@ -60,8 +60,7 @@ def _poll_check_status(t):
     m = t.talk_raw(CMD_CLUSTER_INFO)
     logging.debug('Ask `cluster info` Rsp %s', m)
     cluster_state = PAT_CLUSTER_STATE.findall(m)
-    cluster_slot_assigned = PAT_CLUSTER_SLOT_ASSIGNED.findall(m)
-    if cluster_state[0] != 'ok': 
+    if cluster_state[0] != 'ok':
         raise RedisStatusError('Unexpected status: %s' % m)
 
 
