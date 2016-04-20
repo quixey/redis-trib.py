@@ -61,8 +61,8 @@ def _poll_check_status(t):
     logging.debug('Ask `cluster info` Rsp %s', m)
     cluster_state = PAT_CLUSTER_STATE.findall(m)
     cluster_slot_assigned = PAT_CLUSTER_SLOT_ASSIGNED.findall(m)
-    if cluster_state[0] != 'ok' or int(
-            cluster_slot_assigned[0]) != SLOT_COUNT:
+    if cluster_state[0] != 'ok': #or int(
+            #cluster_slot_assigned[0]) != SLOT_COUNT:
         raise RedisStatusError('Unexpected status: %s' % m)
 
 
@@ -187,7 +187,7 @@ def _migr_one_slot(source_node, target_node, slot, nodes):
 
 def _join_to_cluster(clst, new):
     _ensure_cluster_status_set(clst)
-    _ensure_cluster_status_unset(new)
+    #_ensure_cluster_status_unset(new)
 
     m = clst.talk('cluster', 'meet', new.host, new.port)
     logging.debug('Ask `cluster meet` Rsp %s', m)
@@ -198,6 +198,12 @@ def _join_to_cluster(clst, new):
 
 def join_cluster(cluster_host, cluster_port, newin_host, newin_port,
                  balancer=None, balance_plan=base_balance_plan):
+
+    def filter_slaves(s):
+        if 'slave' in s.role_in_cluster:
+            return False
+        return True
+
     with Talker(newin_host, newin_port) as t, \
          Talker(cluster_host, cluster_port) as cnode:
         _join_to_cluster(cnode, t)
@@ -206,7 +212,7 @@ def join_cluster(cluster_host, cluster_port, newin_host, newin_port,
             logging.info(
                 'Instance at %s:%d has joined %s:%d; now balancing slots',
                 newin_host, newin_port, cluster_host, cluster_port)
-            nodes = _list_nodes(t, default_host=newin_host)[0]
+            nodes = _list_nodes(t, default_host=newin_host, filter_func=filter_slaves)[0]
             for src, dst, count in balance_plan(nodes, balancer):
                 _migr_slots(src, dst, src.assigned_slots[:count], nodes)
         finally:
