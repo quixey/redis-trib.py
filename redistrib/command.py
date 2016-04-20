@@ -61,8 +61,7 @@ def _poll_check_status(t):
     logging.debug('Ask `cluster info` Rsp %s', m)
     cluster_state = PAT_CLUSTER_STATE.findall(m)
     cluster_slot_assigned = PAT_CLUSTER_SLOT_ASSIGNED.findall(m)
-    if cluster_state[0] != 'ok': #or int(
-            #cluster_slot_assigned[0]) != SLOT_COUNT:
+    if cluster_state[0] != 'ok': 
         raise RedisStatusError('Unexpected status: %s' % m)
 
 
@@ -187,7 +186,6 @@ def _migr_one_slot(source_node, target_node, slot, nodes):
 
 def _join_to_cluster(clst, new):
     _ensure_cluster_status_set(clst)
-    #_ensure_cluster_status_unset(new)
 
     m = clst.talk('cluster', 'meet', new.host, new.port)
     logging.debug('Ask `cluster meet` Rsp %s', m)
