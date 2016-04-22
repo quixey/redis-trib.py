@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from hiredis import ProtocolError
+from hiredis import ProtocolError, ReplyError
 from redis import StrictRedis
 
 import redistrib.command
@@ -159,7 +159,7 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
             new_slave_node = new_nodes.pop()
             existing_slave_node = existing_slave_nodes.pop()
             logging.info('Adding new node {} as slave to master {}'.format(new_slave_node['port'],
-                                                                           existing_master_node.id))
+                                                                           existing_master_node.node_id))
             redistrib.command.replicate(existing_master_node.host, existing_master_node.port, new_slave_node['host'],
                                         int(new_slave_node['port']))
             if existing_slave_node:
@@ -220,7 +220,7 @@ def validate_and_run(new_hosts, replication_factor=None, new_masters=None):
     if cluster_nodes:
         logging.info('nodes already in a cluster:')
         for node in cluster_nodes:
-            logging.debug(node)
+            logging.info(node)
             if not clusters:
                 clusters, _, _ = _map_cluster(node['host'], node['port'])
             else:
@@ -241,13 +241,20 @@ def validate_and_run(new_hosts, replication_factor=None, new_masters=None):
             replication_factor = 0
         create(new_nodes, replication_factor)
     else:
+        if replication_factor:
+            new_masters = int(len(new_hosts)*(1/(replication_factor + 1)))
         master = cluster_nodes.pop()
         expand_cluster(master['host'], master['port'], new_nodes, new_masters)
 
 
 def reset_node(node):
+    logging.info("Clearing {} node {}:{}".format(node.role_in_cluster, node.host, node.port))
     with Talker(node.host, node.port) as t:
+        try:
             t.talk('CLUSTER', 'RESET')
+        except ReplyError:
+            logging.warn("Keys exist. Attempting to remove keys.")
+        t.talk('FLUSHALL')
 
 
 def remove_cluster(cluster_nodes):
@@ -263,8 +270,14 @@ def remove_cluster(cluster_nodes):
 def decode_hosts(host_list):
     hosts = []
     for host in host_list:
-        h = host.split(":")
-        hosts.append({'host': h[0], 'port': h[1]})
+        try:
+            h = host.split(":")
+            hosts.append({'host': h[0], 'port': h[1]})
+        except IndexError:
+            logging.error("invalid host: {}".format(host))
+    if not hosts:
+        logging.error("No valid hosts provided.")
+        exit(0)
     return hosts
 
 
@@ -294,11 +307,9 @@ def main():
 
     mx = parser.add_mutually_exclusive_group(required=True)
     mx.add_argument('-r', '--replication-factor',
-                    type=check_negative,
                     action='store',
                     help="required number of slaves per master; default=1")
     mx.add_argument('-m', '--new-masters',
-                    type=check_negative,
                     action='store',
                     help="required number of new masters; default=0")
     mx.add_argument('-c', '--clear-cluster',
@@ -307,11 +318,17 @@ def main():
 
     args = parser.parse_args()
 
+    if args.replication_factor:
+        args.replication_factor = check_negative(args.replication_factor)
+
+    if args.new_masters:
+        args.new_masters = check_negative(args.new_masters)
+
     if not args.clear_cluster:
         new_hosts = decode_hosts(args.new_hosts)
         validate_and_run(new_hosts, args.replication_factor, args.new_masters)
     else:
-        hosts = decode_hosts(args.clear_cluster)
+        hosts = decode_hosts(args.new_hosts)
         remove_cluster(hosts)
 
 
