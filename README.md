@@ -23,13 +23,14 @@ Quick Start
     ./redis_cluster.py -r 1 -n 192.168.99.100:6380 192.168.99.100:6381 192.168.99.100:6382 192.168.99.100:6383
     
     # to reset all nodes in a cluster back to individual zero-states
-    ./redis_cluster.py -c -n 192.168.99.100:6380 
+    ./redis_cluster.py -c -n docker.local:6380 
 
 Usage Nodes
 
 <ul>
 <li> All redis nodes must be configured as cluster nodes in their individual redis.conf file. 
 <li> '-n'/'--new-nodes' argument is always required.
+<li> -n requires a valid IP address or hostname.
 <li> redis_cluster.py detects if any instances are already in a cluster, and will automatically add any non-joined nodes to the existing cluster.
 <li> For -r/-m, If there are no nodes that are not attached to a cluster (as a slave or a master), then the script will exit. 
 <li> If any two nodes are found to not be in the same cluster, then the script will exit before making changes.
