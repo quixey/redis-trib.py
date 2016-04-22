@@ -2,6 +2,8 @@
 
 import argparse
 import logging
+import socket
+
 from hiredis import ProtocolError, ReplyError
 from redis import StrictRedis
 
@@ -272,7 +274,8 @@ def decode_hosts(host_list):
     for host in host_list:
         try:
             h = host.split(":")
-            hosts.append({'host': h[0], 'port': h[1]})
+            h_ip = socket.gethostbyname(h[0])
+            hosts.append({'host': h_ip, 'port': int(h[1])})
         except IndexError:
             logging.error("invalid host: {}".format(host))
     if not hosts:
