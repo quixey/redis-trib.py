@@ -14,7 +14,7 @@ from redistrib.clusternode import Talker
 NUM_SLOTS = 16384
 
 
-def make_parts(n):
+def _make_parts(n):
     p = NUM_SLOTS/n
     remain = NUM_SLOTS-(p*n)
 
@@ -32,6 +32,28 @@ def make_parts(n):
         i = (r + 1)
         count += 1
     return partitions
+
+
+def _map_cluster(node_host, node_port):
+    cluster = {}
+    slaves = []
+    node_port = int(node_port)
+    nodes, master = redistrib.command.list_nodes(node_host, node_port)
+    for node in nodes:
+        if 'master' in node.role_in_cluster:
+            if node.node_id not in cluster:
+                cluster[node.node_id] = {'self': node, 'slaves': []}
+        else:
+            slaves.append(node)
+
+    for slave in slaves:
+        cluster[slave.master_id]['slaves'].append(slave)
+
+    if slaves:
+        cluster_replication_factor = int(len(cluster) / len(slaves))
+    else:
+        cluster_replication_factor = 0
+    return cluster, slaves, cluster_replication_factor
 
 
 def create(new_nodes, replicas=0):
@@ -78,28 +100,6 @@ def create(new_nodes, replicas=0):
             m = master_list[i % master_count]
             redistrib.command.replicate(m[0], m[1], s[0], s[1])
     return True
-
-
-def _map_cluster(node_host, node_port):
-    cluster = {}
-    slaves = []
-    node_port = int(node_port)
-    nodes, master = redistrib.command.list_nodes(node_host, node_port)
-    for node in nodes:
-        if 'master' in node.role_in_cluster:
-            if node.node_id not in cluster:
-                cluster[node.node_id] = {'self': node, 'slaves': []}
-        else:
-            slaves.append(node)
-
-    for slave in slaves:
-        cluster[slave.master_id]['slaves'].append(slave)
-
-    if slaves:
-        cluster_replication_factor = int(len(cluster) / len(slaves))
-    else:
-        cluster_replication_factor = 0
-    return cluster, slaves, cluster_replication_factor
 
 
 def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
@@ -205,7 +205,7 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
                                             new_master_node['host'], int(new_master_node['port']))
 
 
-def validate_and_run(new_hosts, replication_factor=None, new_masters=None):
+def _validate_and_run(new_hosts, replication_factor=None, new_masters=None):
     new_nodes = []
     cluster_nodes = []
 
@@ -269,7 +269,7 @@ def remove_cluster(cluster_nodes):
             reset_node(master['self'])
 
 
-def decode_hosts(host_list):
+def _decode_hosts(host_list):
     hosts = []
     for host in host_list:
         try:
@@ -285,7 +285,7 @@ def decode_hosts(host_list):
 
 
 # from http://stackoverflow.com/questions/14117415
-def check_negative(value):
+def _check_negative(value):
     ivalue = int(value)
     if ivalue < 0:
         raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
@@ -322,16 +322,16 @@ def main():
     args = parser.parse_args()
 
     if args.replication_factor:
-        args.replication_factor = check_negative(args.replication_factor)
+        args.replication_factor = _check_negative(args.replication_factor)
 
     if args.new_masters:
-        args.new_masters = check_negative(args.new_masters)
+        args.new_masters = _check_negative(args.new_masters)
 
     if not args.clear_cluster:
-        new_hosts = decode_hosts(args.new_hosts)
-        validate_and_run(new_hosts, args.replication_factor, args.new_masters)
+        new_hosts = _decode_hosts(args.new_hosts)
+        _validate_and_run(new_hosts, args.replication_factor, args.new_masters)
     else:
-        hosts = decode_hosts(args.new_hosts)
+        hosts = _decode_hosts(args.new_hosts)
         remove_cluster(hosts)
 
 
