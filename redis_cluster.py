@@ -114,8 +114,9 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
     :return:
     """
 
+    logging.debug('master_instance: {}:{}'.format(master_host, master_port))
     cluster, slaves, cluster_replication_factor = _map_cluster(master_host, master_port)
-    logging.debug("cluster: {}".format(cluster))
+    logging.debug("cluster: {}".format(cluster.items()))
     logging.debug("slaves: {}".format(slaves))
 
     if not cluster:
@@ -145,7 +146,10 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
     while num_sets_to_add:
         if not master_list:
             master_list = cluster.values()
-            logging.debug("master list: {}".format(master_list))
+        logging.debug("master list: {}".format(master_list))
+        for master in master_list:
+            if 'self' in master:
+                logging.debug("self: {} {}".format(master['self'].host,master['self'].port ))
         num_sets_to_add -= 1
         new_master_node = new_nodes.pop()
         master = master_list.pop()
@@ -249,18 +253,17 @@ def evaluate_cluster(foreign_nodes, local_nodes, replication_factor=None, new_ma
             logging.debug("cluster node: {}".format(node))
             if not cluster:
                 cluster, _, _ = _map_cluster(node['host'], node['port'])
-            else:
-                _cluster, _, _ = _map_cluster(node['host'], node['port'])
-                for master in _cluster:
-                    if master not in _cluster_nodes:
-                        _cluster_nodes.append(master)
-                    if master not in cluster:
-                        logging.error("Disjoint clusters! Exiting.")
-                        exit(1)
+
+            _cluster, _, _ = _map_cluster(node['host'], node['port'])
+            for master in _cluster:
+                if master not in _cluster_nodes:
+                    _cluster_nodes.append(master)
+                if master not in cluster:
+                    logging.error("Disjoint clusters! Exiting.")
+                    #exit(1)
 
         logging.info('number of nodes in cluster: {}'.format(len(cluster_nodes)))
         logging.info('number of master nodes in existing cluster: {}'.format(len(_cluster_nodes)))
-
     if not new_nodes:
         logging.info("No new nodes found. Cluster is Healthy!")
         logging.debug("cluster map: {}".format(cluster))
@@ -296,8 +299,16 @@ def remove_cluster(foreign_nodes):
         cluster, _, _ = _map_cluster(node['host'], node['port'])
         for master in cluster.values():
             for slave in master['slaves']:
-                reset_node(slave)
-            reset_node(master['self'])
+                try:
+                    reset_node(slave)
+                except socket.error:
+                    logging.warn("Cannot reach node: {}".format(slave))
+                    pass
+            try:
+                reset_node(master['self'])
+            except socket.error:
+                logging.warn("Cannot reach node: {}".format(master))
+                pass
 
 
 def _decode_hosts(host_list):
@@ -329,7 +340,7 @@ def _check_negative(value):
 def main():
     logger = logging.getLogger()
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s - %(funcName)20s :: %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
