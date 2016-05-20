@@ -8,11 +8,11 @@ increments versioning.
 
 To install locally:
 
-    sudo pip install -e git+ssh://git@github.com:quixey/redis-trib.py.git@0.5.0#egg=redis-trib.py
+    sudo pip install -e git+ssh://git@github.com:quixey/redis-trib.py.git@0.5.2#egg=redis-trib.py
     
 Or, for your requirements.txt:
 
-    -e git+ssh://git@github.com:quixey/redis-trib.py.git@0.5.0#egg=redis-trib.py
+    -e git+ssh://git@github.com:quixey/redis-trib.py.git@0.5.2#egg=redis-trib.py
 
 Quick Start
 
