@@ -156,6 +156,7 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
         existing_master_node = master['self']
         existing_slave_nodes = master['slaves']
         logging.info('Adding new node {} to cluster as a master.'.format(new_master_node))
+        logging.debug('new_master_node: {}:{} being added to existing_master_node: {}:{}'.format(existing_master_node.host, existing_master_node.port, new_master_node['host'], new_master_node['port']))
 
         redistrib.command.join_cluster(existing_master_node.host, existing_master_node.port,
                                        new_master_node['host'], int(new_master_node['port']))
