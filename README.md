@@ -17,13 +17,13 @@ Or, for your requirements.txt:
 Quick Start
 
     # to start a new cluster with one redis instance
-    ./redis_cluster.py -r 0 -n 192.168.99.100:6380 
+    ./redis_cluster.py -r 0 -L 192.168.99.100 -l 6380 
     
     # to add a set of new instances to an existing cluster
-    ./redis_cluster.py -r 1 -n 192.168.99.100:6380 192.168.99.100:6381 192.168.99.100:6382 192.168.99.100:6383
+    ./redis_cluster.py -r 1 -L 192.168.99.100 -l 6380 6381 -f 192.168.99.100:6382 192.168.99.100:6383
     
     # to reset all nodes in a cluster back to individual zero-states
-    ./redis_cluster.py -c -n docker.local:6380 
+    ./redis_cluster.py -c -f 192.168.99.100:6380 192.168.99.100:6381 
 
 Usage Nodes
 
