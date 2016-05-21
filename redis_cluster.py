@@ -116,7 +116,23 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
 
     logging.debug('master_instance: {}:{}'.format(master_host, master_port))
     cluster, slaves, cluster_replication_factor = _map_cluster(master_host, master_port)
-    logging.debug("cluster: {}".format(cluster.items()))
+
+    """
+    cluster =
+    {
+            <master_id>:
+            {
+                'self':     <ClusterNode>
+                'slaves':
+                    [
+                            <ClusterNode>,
+                            ...
+                    ]
+            }
+        ...
+    }
+    """
+    logging.debug("cluster: {}".format(cluster))
     logging.debug("slaves: {}".format(slaves))
 
     if not cluster:
@@ -147,9 +163,10 @@ def expand_cluster(master_host, master_port, new_nodes, num_new_masters=None):
         if not master_list:
             master_list = cluster.values()
         logging.debug("master list: {}".format(master_list))
+
         for master in master_list:
             if 'self' in master:
-                logging.debug("self: {} {}".format(master['self'].host,master['self'].port ))
+                logging.debug("self: {} {}".format(master['self'].host, master['self'].port))
         num_sets_to_add -= 1
         new_master_node = new_nodes.pop()
         master = master_list.pop()
@@ -381,7 +398,7 @@ def main():
     parser.add_argument('-L', '--localhost',
                         type=str,
                         action='store',
-                        default='127.0.0.1')
+                        default=socket.gethostbyname(socket.gethostname()))
     parser.add_argument('-g', '--log-dir',
                         type=str,
                         default="/var/log/redis-trib",
