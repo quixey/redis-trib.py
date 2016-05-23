@@ -13,7 +13,12 @@ setup(
     packages=['redistrib'],
     long_description='Visit ' + redistrib.REPO + ' for details. Module forked from '
                                                  'https://github.com/HunanTV/redis-trib.py',
-    install_requires=requirements
+    install_requires=[
+        'hiredis',
+        'redis',
+        'retrying',
+        'six',
+    ],
     zip_safe=False,
     entry_points=dict(
         console_scripts=[
