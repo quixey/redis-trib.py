@@ -402,7 +402,8 @@ def main():
     parser.add_argument('-g', '--log-dir',
                         type=str,
                         default="/var/log/redis-trib",
-                        help="directory path to place logfile (default '/var/log/redis-trib'")
+                        help="directory path to place logfile (default '/var/log/redis-trib'",
+                        action="store")
     parser.add_argument('-d', '--debug',
                         help="DEBUG loglevel. Default: INFO",
                         action='store_true',
@@ -427,8 +428,8 @@ def main():
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
-    log_dir = args.log_dir+"redis-trib.py.log"
-    if os.path.exists(log_dir):
+    log_dir = args.log_dir+"/redis_cluster.log"
+    if os.path.exists(args.log_dir):
         f_handler = logging.FileHandler(log_dir)
         f_handler.setFormatter(formatter)
         logger.addHandler(f_handler)
