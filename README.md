@@ -34,6 +34,6 @@ Usage Nodes
 <li> redis_cluster.py detects if any instances are already in a cluster, and will automatically add any non-joined nodes to the existing cluster.
 <li> For -r/-m, If there are no nodes that are not attached to a cluster (as a slave or a master), then the script will exit. 
 <li> If any two nodes are found to not be in the same cluster, then the script will exit before making changes.
-<li> If -r/-m is 0, redis_cluster.py will attempt to divine and maintain the existing replication factor (in the case of adding new nodes to an existing cluster), or create a cluster with no slaves (if there is no existing cluster).
+<li> If -r/-m is 0, redis_cluster.py will attempt to divine and maintain the existing replication factor (in the case of adding new nodes to an existing cluster), or create a cluster with no slaves (if there is no existing cluster).  
 <li> If -c is used, redis_cluster.py will traverse and zero the entire node tree of every instance provided by detecting all masters in the cluster and then, for each master, zero every attached slave, then the master itself.
 </ul>
