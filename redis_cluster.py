@@ -245,8 +245,29 @@ def evaluate_cluster(foreign_nodes, local_nodes, replication_factor=None, new_ma
     logging.debug("foreign nodes: {}".format(foreign_nodes))
     logging.debug("local nodes: {}".format(local_nodes))
 
+    nodes = foreign_nodes + local_nodes
+
+    logging.debug("Cleaning/De-Duplicating host list.")
+    _nodes = []
+    _hosts = []
+    for node in nodes:
+        if node['host'] == '127.0.0.1':
+            logging.warn("localhost (127.0.0.1) is an invalid host IP. Skipping.")
+            continue
+        elif node['host'] in _hosts:
+            logging.debug("evaluating node for dupe: {}".format(node))
+            dupes = [_n for _n in _nodes if node['port'] == _n['port']]
+            if dupes:
+                logging.info("IP {} has already been declared. Skipping".format(dupes[0]))
+                continue
+
+        logging.debug('Unique Node: {}'.format(node))
+        _hosts.append(node['host'])
+        _nodes.append(node)
+    nodes = _nodes
+
     logging.debug("finding all in foreign_nodes that are not joined to a cluster already")
-    for node in foreign_nodes + local_nodes:
+    for node in nodes:
         logging.debug("checking cluster status of node")
         with Talker(node['host'], int(node['port'])) as t:
             try:
@@ -428,7 +449,22 @@ def main():
     if args.debug:
         logger.setLevel(logging.DEBUG)
 
+    if 'Darwin' in os.uname():
+        args.log_dir = 'log'
+
     log_dir = args.log_dir+"/redis_cluster.log"
+
+    if not os.path.isfile(log_dir):
+        dir = os.path.dirname(log_dir)
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+
+        try:
+            with open(log_dir) as f:
+                pass
+        except:
+            print "ERROR: Cannot Create Log File: ", log_dir
+
     f_handler = logging.FileHandler(log_dir)
     f_handler.setFormatter(formatter)
     logger.addHandler(f_handler)
