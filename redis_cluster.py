@@ -429,10 +429,9 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     log_dir = args.log_dir+"/redis_cluster.log"
-    if os.path.exists(args.log_dir):
-        f_handler = logging.FileHandler(log_dir)
-        f_handler.setFormatter(formatter)
-        logger.addHandler(f_handler)
+    f_handler = logging.FileHandler(log_dir)
+    f_handler.setFormatter(formatter)
+    logger.addHandler(f_handler)
 
     if args.replication_factor:
         args.replication_factor = _check_negative(args.replication_factor)
