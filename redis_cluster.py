@@ -415,7 +415,7 @@ def main():
                         nargs="+",
                         action='store',
                         help="json list of ports of local cluster nodes, of form [<port_number>,...]",
-                        default=['6380', '6381'])
+                        default=[])
     parser.add_argument('-L', '--localhost',
                         type=str,
                         action='store',
